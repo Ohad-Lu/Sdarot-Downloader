@@ -1,29 +1,42 @@
-from sdarotApi import *
-
-def getChosenEpisode(cookie):
-    return {
-            "series_id": getSeriesIdByName("taagad", cookie),
-            "series_name": "taagad",
-            "se": "2", 
-            "ep": "43"
-           }
+from sdarotApi import download_episode, get_episode_url_from_data, get_episode_data
+from Episode import Episode
+from time import sleep
+from TokenPool import TokenPool
 
 
-def chooseDownload(url, cookie, chosen):
+def get_episode_from_user():
+    return Episode("2513", "taagad", "2", "43")
+
+
+def download_promt(url, cookie, chosen):
     download = input("Download?: (yes/no) ")
     if download == "yes":
-        downloadEpisode(url, cookie, chosen)
+        download_episode(url, cookie, chosen)
 
 
 def main():
-    c = getCookie()
-    t = getTokenFromCookie(c)
-    chosen = getChosenEpisode(c)
-    ep_data = getEpisodeData(chosen, t, c)
-    url = getEpisodeUrlFromData(ep_data, chosen)
-    print(url, c)
+    print("Generating pool")
+    token_pool = TokenPool(5)
 
-    chooseDownload(url, c, chosen)
+    print("Getting Episode")
+    episode = get_episode_from_user()
+
+    print("Sleeping 30")
+    sleep(30)
+
+    while True:
+        token = token_pool.get_token()
+
+        try:
+            ep_data = get_episode_data(episode, token)
+
+        except ConnectionError as e:
+            print(f"Error {e}")
+
+        else:
+            url = get_episode_url_from_data(ep_data, episode)
+            print(url, token.cookie)
+            break
 
 
 main()
