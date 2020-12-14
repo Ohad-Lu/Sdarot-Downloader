@@ -37,4 +37,4 @@ def get_episode(series_id, season, episode):
 
 if __name__ == "__main__":
     sleep(30)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

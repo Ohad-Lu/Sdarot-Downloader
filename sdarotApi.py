@@ -1,7 +1,7 @@
 import requests
 from ast import literal_eval
 
-URL = "https://sdarot.dev"
+URL = "https://sdarot.website/"
 
 
 def get_cookie():
