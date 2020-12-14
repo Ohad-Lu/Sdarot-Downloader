@@ -1,15 +1,15 @@
 import requests
 from ast import literal_eval
+from time import sleep
 
 URL = "https://sdarot.dev"
 
-
-def get_cookie():
+def getCookie():
     res = requests.get(URL)
     return res.headers["set-cookie"]
 
 
-def get_token_for_cookie(cookie):
+def getTokenFromCookie(cookie):
     url = URL + "/ajax/watch"
 
     headers = {
@@ -18,7 +18,7 @@ def get_token_for_cookie(cookie):
     }
 
     payload = {
-        "preWatch": "true"
+        "preWatch" : "true"
     }
 
     res = requests.request("POST", url, headers=headers, data=payload)
@@ -26,40 +26,46 @@ def get_token_for_cookie(cookie):
     return res.text
 
 
-def get_episode_data(episode, token):
+def getEpisodeData(chosen, token, cookie):
     url = URL + "/ajax/watch"
 
     headers = {
-        "cookie": token.cookie,
+        "cookie": cookie,
         "Referer": URL + "/watch/"
     }
 
     payload = {
         "watch": "false",
-        "token": token.token,
-        "serie": episode.series_id,
-        "season": episode.season,
-        "episode": episode.episode,
+        "token": token,
+        "serie": chosen["series_id"],
+        "season": chosen["se"],
+        "episode": chosen["ep"],
         "type": "episode"
     }
+    
 
-    res = requests.request("POST", url, headers=headers, data=payload)
-    data = literal_eval(res.text)
-
-    if "VID" not in data:
-        raise ConnectionError(f"Server not responded with right values: \n{data}")
-
+    data = {}
+    while "VID" not in data:
+        res = requests.request("POST", url, headers=headers, data=payload)
+        data = literal_eval(res.text)
+        print(data)
+        if "error" in data:
+            if "status" in data["error"]:
+                payload["token"] = getTokenFromCookie(cookie)
+        
+        sleep(5)
+    
     return data
 
 
-def get_episode_url_from_data(data, episode):
+def getEpisodeUrlFromData(data, chosen):
     file_name = f'{data["VID"]}.mp4?token={list(data["watch"].values())[0]}&time={data["time"]}&uid={data["uid"]}'
-    url = f'https://{data["url"]}/w/episode/{episode.series_id}/{list(data["watch"].keys())[0]}/{file_name}'
+    url = f'https://{data["url"]}/w/episode/{chosen["series_id"]}/{list(data["watch"].keys())[0]}/{file_name}'
 
     return url
 
 
-def get_series_id_by_name(name, cookie):
+def getSeriesIdByName(name, cookie):
     headers = {
         "cookie": cookie,
         "Referer": URL + "/watch/"
@@ -69,7 +75,6 @@ def get_series_id_by_name(name, cookie):
 
     return literal_eval(found)[0]["id"]
 
-
-def download_episode(url, cookie, episode):
+def downloadEpisode(url, cookie, chosen):
     res = requests.get(url, headers={"cookie": cookie}, allow_redirects=True)
-    open(f'{episode.series_name}_SE{episode.season}EP{episode.episode}.mp4', "wb").write(res.content)
+    open(f'{chosen["series_name"]}_SE{chosen["se"]}EP{chosen["ep"]}.mp4', "wb").write(res.content)
